@@ -2,3 +2,5 @@ beautifulsoup4
 requests
 bs4
 lxml
+pylint
+pep8

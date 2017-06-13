@@ -17,13 +17,14 @@ def is_int(name):
 
 def find_all_elements(elements, soup):
     """Finds all articles and returns array of Element namedtuples which include title and price"""
-   # char1 = [child for link in soup.find_all('article') 
-   #              for child in link.children if child.name == 'h3']
-    #print(char1)
-    #character = [i.children for i in child]
+    char1 = [child for link in soup.find_all('article') 
+                 for child in link.children if child.name == 'h3']
+    print(char1)
+    character = [i.children for i in child]
 
+#ZA DRUGU VERZIJU OTKOMENTIRATI DVIJE LINIJE DOLJE I ZAKOMENTIRATI GORNJE TRI LINIJE
     #character = [child.children for link in soup.find_all('article') 
-    #             for child in link.children if child.name == 'h3']
+    #            for child in link.children if child.name == 'h3']
    
     #print(character)
     #character = filter(lambda: character.name == 'a', character)
@@ -61,8 +62,7 @@ def find_all_elements(elements, soup):
 # ODG funkcija vraca sve stranice...
 def find_paging_links(soup):
     """Finds page link number"""
-    buttons = soup.find_all('button')
-    yield [int(num) for button in buttons
+    yield [int(num) for button in soup.find_all('button')
            for num in button.text.split("-")
            if 'data-page' in button.attrs
            if is_int(num)]

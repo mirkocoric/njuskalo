@@ -18,13 +18,13 @@ def is_int(name):
 def find_all_elements(elements, soup):
     """Finds all articles and returns array of Element namedtuples which include title and price"""
     char1 = [child for link in soup.find_all('article') 
-                 for child in link.children if child.name == 'h3']
+             for child in link.children if child.name == 'h3']
     print(char1)
     character = [i.children for i in child]
 
 #ZA DRUGU VERZIJU OTKOMENTIRATI DVIJE LINIJE DOLJE I ZAKOMENTIRATI GORNJE TRI LINIJE
-    #character = [child.children for link in soup.find_all('article') 
-    #            for child in link.children if child.name == 'h3']
+    #character = [child.children for link in soup.find_all('article')
+    #             for child in link.children if child.name == 'h3']
    
     #print(character)
     #character = filter(lambda: character.name == 'a', character)

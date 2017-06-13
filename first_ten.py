@@ -17,12 +17,28 @@ def is_int(name):
 
 def find_all_elements(elements, soup):
     """Finds all articles and returns array of Element namedtuples which include title and price"""
+   # char1 = [child for link in soup.find_all('article') 
+   #              for child in link.children if child.name == 'h3']
+    #print(char1)
+    #character = [i.children for i in child]
+
+    #character = [child.children for link in soup.find_all('article') 
+    #             for child in link.children if child.name == 'h3']
+   
+    #print(character)
+    #character = filter(lambda: character.name == 'a', character)
+    #naslov = [i.text for i in character if i.name == 'a']
+    #entity_price = [i.parent.parent.descendents for i in character if character.name == 'a']
+    #cijena = [price.text for price in entity_price if (entity_price.name
+    #                                                   and 'class' in entity_price.attrs
+     #                                                  and entity_price['class'][0] == 'price')]
+    #elements.append(Element(naslov, cijena))
     for link in soup.find_all('article'):
         #print(li.find('a').text)
         for child in link.children:
             if child.name != 'h3':
                 continue
-            for character in child.children:  # nopylint
+            for character in child.children:
                 if character.name != 'a':
                     continue
                 cijena = []
@@ -31,37 +47,49 @@ def find_all_elements(elements, soup):
                 #soup2 = BeautifulSoup (article, 'lxml')
                 #soup2.find_all(class = 'price')
                 for entity_price in article.descendants:
-                    if entity_price.name and \
-                    'class' in entity_price.attrs and \
-                    entity_price['class'][0] == 'price':
+                    if (entity_price.name
+                            and 'class' in entity_price.attrs
+                            and entity_price['class'][0] == 'price'):
                         cijena.append(entity_price.text)
                 elements.append(Element(naslov, cijena))
     return elements
 
-def find_page_numbers(home):
-    """Calculates number of pages with articles"""
-    page = requests.get(home)
-    soup = BeautifulSoup(page.content, 'lxml')
+# krivo imenovanje:
+# kazes, nadji brojeve stranica
+# a zapravo trazis posljednju stranicu
+# sugestija: find_last_page_number
+# ODG funkcija vraca sve stranice...
+def find_paging_links(soup):
+    """Finds page link number"""
     buttons = soup.find_all('button')
-    numbers = []
-    for button in buttons:
-        if 'data-page' in button.attrs:
-            list_num = button.text.split("-")
-            for num in list_num:
-                numbers.append(num)
+    yield [int(num) for button in buttons
+           for num in button.text.split("-")
+           if 'data-page' in button.attrs
+           if is_int(num)]
 
-    page_num = 0
-    for number in numbers:
-        if is_int(number):
-            num = int(number)
-            if num > page_num:
-                page_num = num
-    return page_num
+def find_last_page_number(soup):
+    """Calculates number of pages with articles"""
+    numbers = find_paging_links(soup)
+    return map(max, numbers)[0]
+    # napravi ovo kao generator stranica brojeva koristeci yield
+    # ideja:
+    # funkcija: find_paging_links(soup) ->
+    #                  -> 1-5, 5-9, ... 11, ...
+    #
+    # ako kopas kroz neku stablastu strukturu, a nije ti bitna
+    # samo struktura stabla, onda je ideja da napravis funkciju koja ti
+    # pretvara stablastu strukturu u "ravnu" strukturu, tj. listu
+    # ili nesto sto je tzv. lazy varijanta liste, tj. iterable, tj. generator
+    #
+    # koncept iza generatora je da umjesto da se izracunaju svi elementi odmah
+    # se po potrebi generira sljedeci element
+    # ovo se radi preko "korutina" (coroutines), jos jednog naprednog koncepta
+    # iz programiranja
 
 def print_elements(elements):
     """Prints all elements"""
+   # el = (naslov, cijena for element in elements in zip(element.naslov, element.cijena))
     for element in elements:
-    #print(vars(element))
         print('Naslov: ' +element.naslov, end=' ')
         if element.cijena:
             print('Cijena: ', end=' ')
@@ -84,9 +112,10 @@ def main():
     #home = 'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora'
     #url = 'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora?page='
     url = home + '?page='
+    page = requests.get(home)
+    soup = BeautifulSoup(page.content, 'lxml')
 
-    page_num = find_page_numbers(home)
-
+    page_num = find_last_page_number(soup)
     for i in xrange(page_num):
         new_url = url + str(i+1)
         page = requests.get(new_url)

@@ -4,6 +4,7 @@ import argparse
 from collections import namedtuple
 import requests
 from bs4 import BeautifulSoup
+import itertools as it
 
 Element = namedtuple('Element', 'naslov cijena')
 
@@ -17,43 +18,61 @@ def is_int(name):
 
 def find_all_elements(elements, soup):
     """Finds all articles and returns array of Element namedtuples which include title and price"""
-    char1 = [child for link in soup.find_all('article') 
-             for child in link.children if child.name == 'h3']
-    print(char1)
-    character = [i.children for i in child]
-
-#ZA DRUGU VERZIJU OTKOMENTIRATI DVIJE LINIJE DOLJE I ZAKOMENTIRATI GORNJE TRI LINIJE
+    tags = [child for link in soup.find_all('article')
+            for child in link.children
+            if child.name == 'h3']
+    link = [child for tag in tags for child in tag.children]# if child is not None if child.name == 'a']
+    print([l.name for l in link])
+    #tag = [j for link in soup.find_all('article')
+     #      for child in link.children for i in child for j in i if child.name == 'h3']
+    #char1 = it.chain(char1)
+    #print(type(char1.children))
+    #tag = [i.children for i in char1]
+    
+    entity_price = [i.parent.parent for i in link]
+    entity_price = [child for i in entity_price for child in i.descendants]
+#Z#NASAO GRESKU< BILA JE LISTA VISIH DSIMENZIJA - ISPRAVITI
     #character = [child.children for link in soup.find_all('article')
     #             for child in link.children if child.name == 'h3']
-   
+    #print(entity_price)
     #print(character)
-    #character = filter(lambda: character.name == 'a', character)
-    #naslov = [i.text for i in character if i.name == 'a']
+    naslov = [i.text for i in link]
     #entity_price = [i.parent.parent.descendents for i in character if character.name == 'a']
-    #cijena = [price.text for price in entity_price if (entity_price.name
-    #                                                   and 'class' in entity_price.attrs
-     #                                                  and entity_price['class'][0] == 'price')]
+    cijena = [price.text for price in entity_price if (price.name
+                                                       and 'class' in price.attrs
+                                                       and price['class'][0] == 'price')]
+    for n, c in zip(naslov, cijena):
+        elements.append(Element(n, c))
+        #print(naslov)
+    #print(cijena)
+    #print(zip(n, c) for n in naslov for c in cijena)
+    #gen = [zip(n, c) for n in naslov for c in cijena]
+    #for i in gen:
+    #    print(i)
+    #print(map(Element, (zip(n, c) for n in naslov for c in cijena)))
     #elements.append(Element(naslov, cijena))
-    for link in soup.find_all('article'):
+    return elements
+
+    #for link in soup.find_all('article'):
         #print(li.find('a').text)
-        for child in link.children:
-            if child.name != 'h3':
-                continue
-            for character in child.children:
-                if character.name != 'a':
-                    continue
-                cijena = []
-                naslov = character.text
-                article = character.parent.parent
+     #   for child in link.children:
+     #       if child.name != 'h3':
+    #            continue
+     #       for character in child.children:
+    #            if character.name != 'a':
+    #                continue
+    #            cijena = []
+    #            naslov = character.text
+    #            article = character.parent.parent
                 #soup2 = BeautifulSoup (article, 'lxml')
                 #soup2.find_all(class = 'price')
-                for entity_price in article.descendants:
-                    if (entity_price.name
-                            and 'class' in entity_price.attrs
-                            and entity_price['class'][0] == 'price'):
-                        cijena.append(entity_price.text)
-                elements.append(Element(naslov, cijena))
-    return elements
+    #            for entity_price in article.descendants:
+    #                if (entity_price.name
+    #                        and 'class' in entity_price.attrs
+    #                        and entity_price['class'][0] == 'price'):
+    #                    cijena.append(entity_price.text)
+    #            elements.append(Element(naslov, cijena))
+    #return elements
 
 # krivo imenovanje:
 # kazes, nadji brojeve stranica

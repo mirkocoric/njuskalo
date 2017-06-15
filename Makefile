@@ -12,7 +12,7 @@ clean:
 	rm -rf venv
 
 run:
-	${PYTHONPATH} first_ten.py 'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora'
+	${PYTHONPATH} njuskalo.py 'http://www.njuskalo.hr/iznajmljivanje-poslovnih-prostora'
 
 virtualenv: requirements.txt | venv 
 	@venv/bin/pip install -r requirements.txt

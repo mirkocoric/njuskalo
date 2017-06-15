@@ -75,11 +75,10 @@ def parse_args():
                         help='home url')
     return parser.parse_args().home
 
-def main():
-    """Main function"""
+def print_ads(homeurl):
+    """Print ads from homeurl"""
     links_articles = []
-    home = parse_args()
-    url = home + '?page='
+    url = homeurl + '?page='
     soup = soup_from_url(url)
     page_num = find_last_page_number(soup)
 
@@ -89,6 +88,11 @@ def main():
         links_articles.append(find_all_elements(soup))
 
     print_elements(links_articles)
+
+def main():
+    """Main function"""
+    homeurl = parse_args()
+    print_ads(homeurl)
 
 if __name__ == "__main__":
     main()

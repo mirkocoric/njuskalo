@@ -5,6 +5,11 @@ from collections import namedtuple
 import re
 import requests
 from bs4 import BeautifulSoup
+import tornado.ioloop
+import tornado.web
+from tornado.httpclient import AsyncHTTPClient
+from tornado.concurrent import Future
+from tornado import gen
 
 
 Element = namedtuple('Element', 'naslov cijena')
@@ -55,6 +60,24 @@ def print_element(element):
         print(cijena, end=' ')
     print()
 
+def return_string_from_element(element):
+    """Returns string for each element to print on web application"""
+    elem = ''
+    elem = elem + 'Naslov: ' +element.naslov+ ' '
+    if element.cijena:
+        elem = elem + 'Cijena: '
+    for cijena in element.cijena:
+        elem = elem + cijena + ' '
+    elem = elem + "\r\n"
+    return elem
+
+def return_elements(listgenelements):
+    """Returns all elements as a list of strings"""
+    return (map(return_string_from_element,
+                [element for genelements in listgenelements
+                 for elements in genelements
+                 for element in elements]))
+
 def print_elements(listgenelements):
     """Prints all elements"""
     map(print_element,
@@ -63,7 +86,7 @@ def print_elements(listgenelements):
          for element in elements])
 
 def soup_from_url(home):
-    """Returns soup objectg for given url"""
+    """Returns soup object for given url"""
     response = requests.get(home)
     return BeautifulSoup(response.content, 'lxml')
 
@@ -86,13 +109,36 @@ def print_ads(homeurl):
         pageurl = url + str(i+1)
         soup = soup_from_url(pageurl)
         links_articles.append(find_all_elements(soup))
-
-    print_elements(links_articles)
+    
+    return return_elements(links_articles)
+    #print_elements(links_articles)
 
 def main():
     """Main function"""
     homeurl = parse_args()
-    print_ads(homeurl)
+    return print_ads(homeurl)
+
+    
+class MainHandler(tornado.web.RequestHandler):
+    """Main request handler"""
+    def get(self):
+        ads = main()
+        print(ads)
+        map(self.write, (element.encode('utf-8') for element in ads))
+
+def make_app():
+    """Makes web application"""
+    return tornado.web.Application([
+        (r"/", MainHandler),
+    ])
+
+#@gen.coroutine
+#def fetch_coroutine(url):
+ #   http_client = AsyncHTTPClient()
+ #   response = yield http_client.fetch(url)
+  #  raise gen.Return(response.body)
 
 if __name__ == "__main__":
-    main()
+    app = make_app()
+    app.listen(8500)
+    tornado.ioloop.IOLoop.current().start()

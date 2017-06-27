@@ -26,7 +26,7 @@ class MainHandler(tornado.web.RequestHandler):
         for number in xrange(page_num):
             pageurl = self.create_url(url, number)
             soup = yield self.soup_from_url(pageurl)
-            links_articles.append(njuskalo.find_all_elements(soup))
+            links_articles.append(njuskalo.find_all_ads(soup))
         raise gen.Return(links_articles)
 
     @gen.coroutine
@@ -36,11 +36,11 @@ class MainHandler(tornado.web.RequestHandler):
         soup = yield self.soup_from_url(url)
         page_num = njuskalo.find_last_page_number(soup)
         links_articles = yield self.find_ads(page_num, url)
-        raise gen.Return(njuskalo.return_elements(links_articles))
+        raise gen.Return(njuskalo.return_ads(links_articles))
 
     @gen.coroutine
     def get(self):
         """Main request handler"""
         homeurl = njuskalo.parse_args()
         ads = yield self.print_ads(homeurl)
-        self.write(''.join(ads).encode('utf-8'))
+        self.write(''.join(ads))

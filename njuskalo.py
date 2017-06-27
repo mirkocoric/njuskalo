@@ -63,18 +63,22 @@ def parse_args():
     parser = argparse.ArgumentParser(description=description_string)
     parser.add_argument('home',
                         help='home url')
-    return parser.parse_args().home
+    parser.add_argument('--port',
+                        help='port',
+                        default=8500)
+    return parser.parse_args().home, parser.parse_args().port
 
 def start_ad_service():
     """Launches the Tornado service for Ads"""
-    app = make_app()
-    app.listen(8500)
+    homeurl, port = parse_args()
+    app = make_app(homeurl)
+    app.listen(port)
     tornado.ioloop.IOLoop.current().start()
 
-def make_app():
+def make_app(homeurl):
     """Creates web application"""
     return tornado.web.Application([
-        (r"/", handlers.MainHandler),
+        (r"/", handlers.MainHandler, dict(homeurl=homeurl))
     ])
 
 if __name__ == "__main__":

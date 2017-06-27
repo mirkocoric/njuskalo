@@ -7,6 +7,11 @@ from bs4 import BeautifulSoup
 
 class MainHandler(tornado.web.RequestHandler):
     """Returns soup object for given url"""
+
+    def initialize(self, homeurl):
+        """Initializes url argument"""
+        self.homeurl = homeurl
+
     @gen.coroutine
     def soup_from_url(self, url):
         """Return soup from given url"""
@@ -41,6 +46,6 @@ class MainHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
         """Main request handler"""
-        homeurl = njuskalo.parse_args()
-        ads = yield self.print_ads(homeurl)
+        ads = yield self.print_ads(self.homeurl)
         self.write(''.join(ads))
+

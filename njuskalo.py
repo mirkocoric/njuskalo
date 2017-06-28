@@ -41,7 +41,7 @@ def find_atags(soup):
 
 
 def find_all_ads(soup):
-    """Finds all articles and returns array of AdTuples"""
+    """Finds all articles and returns sequence of AdTuples"""
     atags = find_atags(soup)
     return (AdTuple(atag.text, make_price(atag.parent.parent.find_all
                                           (class_='price')))
@@ -82,7 +82,7 @@ def parse_args():
 
 def create_url(url, number):
     '''Returns page url for given url and page number'''
-    string = "%20s?page=%.2f" % (url, number+1)
+    string = "%s?page=%f" % (url, number+1)
     return string
 
 
@@ -100,8 +100,8 @@ def find_ads(page_num, url):
 
 
 @gen.coroutine
-def return_ads_from_url(homeurl):
-    """Print ads from homeurl"""
+def ads_from_url(homeurl):
+    """Returns ads from homeurl"""
     soup = yield soup_from_url(homeurl)
     page_num = find_last_page_number(soup)
     links_articles = yield find_ads(page_num, homeurl)
@@ -120,10 +120,8 @@ def start_ad_service(homeurl=None, port=None):
     """Launches the Tornado service for Ads"""
     if not homeurl or not port:
         args = parse_args()
-        if not homeurl:
-            homeurl = args.home
-        if not port:
-            port = args.port
+    homeurl = homeurl or args.home
+    port = port or args.port
     app = make_app(homeurl)
     app.listen(port)
     tornado.ioloop.IOLoop.current().start()

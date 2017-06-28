@@ -16,7 +16,7 @@ class AdTuple(namedtuple('adtuple', 'naslov cijena')):
     def __str__(self):
         return ''.join(['Naslov: ', self.naslov, ' ',
                         'Cijena: ', ' '.join(self.cijena),
-                        '\r\n']).encode('utf-8')
+                        '\r\n']).encode('utf-8', errors='ignore')
 
 
 def is_int(name):
@@ -120,8 +120,10 @@ def start_ad_service(homeurl=None, port=None):
     """Launches the Tornado service for Ads"""
     if not homeurl or not port:
         args = parse_args()
-        homeurl = args.home
-        port = args.port
+        if not homeurl:
+            homeurl = args.home
+        if not port:
+            port = args.port
     app = make_app(homeurl)
     app.listen(port)
     tornado.ioloop.IOLoop.current().start()

@@ -30,7 +30,8 @@ def is_int(name):
 
 def make_price(pricetag_list):
     """Returns list of prices"""
-    return [re.sub(r'~', '', pricetag.text) for pricetag in pricetag_list]
+    return [re.sub(r'~', '', pricetag.text)
+            for pricetag in pricetag_list]
 
 
 def find_atags(soup):
@@ -82,7 +83,7 @@ def parse_args():
 
 def create_url(url, number):
     '''Returns page url for given url and page number'''
-    string = "%s?page=%f" % (url, number+1)
+    string = "%s?page=%d" % (url, number + 1)
     return string
 
 
@@ -92,10 +93,8 @@ def find_ads(page_num, url):
     Returns a list of pages where each page is a list of AdTuple objects'''
     links_articles = []
     for number in xrange(page_num):
-        pageurl = create_url(url, number)
-        soup = yield soup_from_url(pageurl)
-        ads = find_all_ads(soup)
-        links_articles += ads
+        soup = yield soup_from_url(create_url(url, number))
+        links_articles += find_all_ads(soup)
     raise gen.Return(links_articles)
 
 
@@ -103,8 +102,7 @@ def find_ads(page_num, url):
 def ads_from_url(homeurl):
     """Returns ads from homeurl"""
     soup = yield soup_from_url(homeurl)
-    page_num = find_last_page_number(soup)
-    links_articles = yield find_ads(page_num, homeurl)
+    links_articles = yield find_ads(find_last_page_number(soup), homeurl)
     raise gen.Return(ads_to_strings(links_articles))
 
 

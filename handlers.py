@@ -1,5 +1,5 @@
 '''Handlers'''
-import FetchAds
+import fetch_ads
 import tornado.web
 from tornado import gen
 
@@ -14,5 +14,5 @@ class AdsHandler(tornado.web.RequestHandler):
     @gen.coroutine
     def get(self):
         """Returns ads from url and prints them in a web browser"""
-        ads = yield FetchAds.ads_from_url(self.homeurl)
+        ads = yield fetch_ads.ads_from_url(self.homeurl)
         self.write(''.join(ads))

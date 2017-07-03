@@ -71,22 +71,35 @@ def create_url(url, number):
 
 
 @gen.coroutine
-def find_ads(page_num, url):
+def find_ads(page_num, url, database):
     '''Find ads from page_num pages from given url
     Returns a list of pages where each page is a list of AdTuple objects'''
     links_articles = []
+    adstrings = ''
     for number in xrange(page_num):
-        soup = yield soup_from_url(create_url(url, number))
-        links_articles += find_all_ads(soup)
-    raise gen.Return(links_articles)
+        homeurl = create_url(url, number)
+        ads = database.search_database(homeurl)
+        if ads:
+            print ("Fetched from database")
+            adstring = ads
+        else:
+            print ("Connecting to njuskalo")
+            soup = yield soup_from_url(create_url(url, number))
+            ads = find_all_ads(soup)
+            links_articles += ads
+            adstring = ads_to_strings(links_articles)
+            database.update_database(homeurl, adstring)
+            print ("Database updated")
+        adstrings.join(adstring)
+    raise gen.Return(adstrings)
 
 
 @gen.coroutine
-def ads_from_url(homeurl):
+def ads_from_url(homeurl, database):
     """Returns ads from homeurl"""
     soup = yield soup_from_url(homeurl)
-    links_articles = yield find_ads(find_last_page_number(soup), homeurl)
-    raise gen.Return(ads_to_strings(links_articles))
+    raise(gen.Return(find_ads(find_last_page_number(soup),
+                              homeurl, database)))
 
 
 @gen.coroutine

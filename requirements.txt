@@ -5,3 +5,5 @@ lxml
 pylint
 pep8
 tornado
+sqlalchemy
+mysql-python

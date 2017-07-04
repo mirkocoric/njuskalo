@@ -17,7 +17,7 @@ Base = declarative_base()
 
 class Ads(Base):
     __tablename__ = 'ads'
-    url = Column(String(100))
+    url = Column(String(100), index=True)
     data = Column(LONGTEXT)
     id = Column(Integer, primary_key=True)
 

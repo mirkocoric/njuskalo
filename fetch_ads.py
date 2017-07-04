@@ -11,9 +11,8 @@ import database
 class Ad(namedtuple('ad', 'naslov cijena')):
     '''Stores naslov and cijena for each ad in a single element'''
     def __str__(self):
-        return ''.join(['Naslov: ', self.naslov, ' ',
-                        'Cijena: ', ' '.join(self.cijena),
-                        '\n']).encode('utf-8', errors='ignore')
+        return ('Naslov: %s Cijena: %s \n' %
+                (self.naslov, ' '.join(self.cijena))).encode('utf-8')
 
 
 def is_int(name):

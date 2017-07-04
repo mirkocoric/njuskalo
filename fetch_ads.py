@@ -72,24 +72,30 @@ def create_url(url, number):
     string = "%s?page=%d" % (url, number + 1)
     return string
 
+@gen.coroutine
+def fetch_from_url_and_store(url, session):
+    '''Fetches url from url and stores data into database
+    Returns data'''
+    soup = yield soup_from_url(url)
+    ads = yield find_all_ads(soup)
+    data = ads_to_string(ads)
+    database.update(url, data, session)
+    raise gen.Return(data)
+
 
 @gen.coroutine
-def find_ads(page_num, url, session):
+def find_ads(page_num, homeurl, session):
     '''Find ads from page_num pages from given url
     First checks if url exists in database ads
     Returns a list of pages where each page is a list of AdTuple objects'''
     links_articles = []
     for number in xrange(page_num):
-        homeurl = create_url(url, number)
-        ads = yield database.search(homeurl, session)
+        url = create_url(homeurl, number)
+        ads = yield database.search(url, session)
         if ads:
-            strad = ads.data
+            links_articles += ads.data
         else:
-            soup = yield soup_from_url(homeurl)
-            ads = yield find_all_ads(soup)
-            strad = ads_to_string(ads)
-            database.update(homeurl, strad, session)
-        links_articles += strad
+            links_articles += yield fetch_from_url_and_store(url, session)
     raise gen.Return(links_articles)
 
 

@@ -5,6 +5,7 @@ import re
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
 from bs4 import BeautifulSoup
+import database
 
 
 class AdTuple(namedtuple('adtuple', 'naslov cijena')):
@@ -37,12 +38,13 @@ def find_atags(soup):
             for atag in h3tag.find_all(name='a'))
 
 
+@gen.coroutine
 def find_all_ads(soup):
     """Finds all articles and returns sequence of AdTuples"""
     atags = find_atags(soup)
-    return (AdTuple(atag.text, make_price(atag.parent.parent.find_all
-                                          (class_='price')))
-            for atag in atags)
+    raise gen.Return((AdTuple(atag.text, make_price
+                     (atag.parent.parent.find_all(class_='price')))
+                     for atag in atags))
 
 
 def find_paging_links(soup):
@@ -59,9 +61,10 @@ def find_last_page_number(soup):
     return max(numbers)
 
 
-def ads_to_strings(ads):
-    """Returns all ads as a list of strings"""
-    return map(str, ads)
+def ads_to_string(ads):
+    """Returns all ads as a string"""
+    strings = map(str, ads)
+    return ''.join(strings)
 
 
 def create_url(url, number):
@@ -71,35 +74,32 @@ def create_url(url, number):
 
 
 @gen.coroutine
-def find_ads(page_num, url, database):
+def find_ads(page_num, url, session):
     '''Find ads from page_num pages from given url
+    First checks if url exists in database ads
     Returns a list of pages where each page is a list of AdTuple objects'''
     links_articles = []
-    adstrings = ''
     for number in xrange(page_num):
         homeurl = create_url(url, number)
-        ads = database.search_database(homeurl)
+        ads = yield database.search(homeurl, session)
         if ads:
-            print ("Fetched from database")
-            adstring = ads
+            strad = ads.data
         else:
-            print ("Connecting to njuskalo")
-            soup = yield soup_from_url(create_url(url, number))
-            ads = find_all_ads(soup)
-            links_articles += ads
-            adstring = ads_to_strings(links_articles)
-            database.update_database(homeurl, adstring)
-            print ("Database updated")
-        adstrings.join(adstring)
-    raise gen.Return(adstrings)
+            soup = yield soup_from_url(homeurl)
+            ads = yield find_all_ads(soup)
+            strad = ads_to_string(ads)
+            database.update(homeurl, strad, session)
+        links_articles += strad
+    raise gen.Return(links_articles)
 
 
 @gen.coroutine
-def ads_from_url(homeurl, database):
+def ads_from_url(homeurl, session):
     """Returns ads from homeurl"""
     soup = yield soup_from_url(homeurl)
-    raise(gen.Return(find_ads(find_last_page_number(soup),
-                              homeurl, database)))
+    ads = yield find_ads(find_last_page_number(soup),
+                         homeurl, session)
+    raise gen.Return(ads)
 
 
 @gen.coroutine

@@ -8,12 +8,12 @@ from bs4 import BeautifulSoup
 import database
 
 
-class AdTuple(namedtuple('adtuple', 'naslov cijena')):
+class Ad(namedtuple('ad', 'naslov cijena')):
     '''Stores naslov and cijena for each ad in a single element'''
     def __str__(self):
         return ''.join(['Naslov: ', self.naslov, ' ',
                         'Cijena: ', ' '.join(self.cijena),
-                        '\r\n']).encode('utf-8', errors='ignore')
+                        '\n']).encode('utf-8', errors='ignore')
 
 
 def is_int(name):
@@ -27,7 +27,7 @@ def is_int(name):
 
 def make_price(pricetag_list):
     """Returns list of prices"""
-    return [re.sub(r'~', '', pricetag.text)
+    return [pricetag.text.replace(r'~', '')
             for pricetag in pricetag_list]
 
 
@@ -38,13 +38,12 @@ def find_atags(soup):
             for atag in h3tag.find_all(name='a'))
 
 
-@gen.coroutine
 def find_all_ads(soup):
     """Finds all articles and returns sequence of AdTuples"""
     atags = find_atags(soup)
-    raise gen.Return((AdTuple(atag.text, make_price
-                     (atag.parent.parent.find_all(class_='price')))
-                     for atag in atags))
+    return (Ad(atag.text, make_price
+            (atag.parent.parent.find_all(class_='price')))
+            for atag in atags)
 
 
 def find_paging_links(soup):
@@ -72,39 +71,40 @@ def create_url(url, number):
     string = "%s?page=%d" % (url, number + 1)
     return string
 
+
 @gen.coroutine
-def fetch_from_url_and_store(url, session):
+def fetch_from_url_and_store(session, url):
     '''Fetches url from url and stores data into database
     Returns data'''
     soup = yield soup_from_url(url)
-    ads = yield find_all_ads(soup)
+    ads = find_all_ads(soup)
     data = ads_to_string(ads)
-    database.update(url, data, session)
+    database.update(session, url, data)
     raise gen.Return(data)
 
 
 @gen.coroutine
-def find_ads(page_num, homeurl, session):
+def find_ads(session, page_num, homeurl):
     '''Find ads from page_num pages from given url
     First checks if url exists in database ads
     Returns a list of pages where each page is a list of AdTuple objects'''
     links_articles = []
     for number in xrange(page_num):
         url = create_url(homeurl, number)
-        ads = yield database.search(url, session)
+        ads = database.search(session, url)
         if ads:
             links_articles += ads.data
         else:
-            links_articles += yield fetch_from_url_and_store(url, session)
+            links_articles += yield fetch_from_url_and_store(session, url)
     raise gen.Return(links_articles)
 
 
 @gen.coroutine
-def ads_from_url(homeurl, session):
+def ads_from_url(session, homeurl):
     """Returns ads from homeurl"""
     soup = yield soup_from_url(homeurl)
-    ads = yield find_ads(find_last_page_number(soup),
-                         homeurl, session)
+    ads = yield find_ads(session, find_last_page_number(soup),
+                         homeurl)
     raise gen.Return(ads)
 
 

@@ -27,7 +27,7 @@ class AdsHandler(tornado.web.RequestHandler):
     def get(self):
         """Returns ads from url and prints them in a web browser"""
         session = self.session_registry()
-        ads = yield fetch_ads.ads_from_url(self.homeurl, session)
+        ads = yield fetch_ads.ads_from_url(session, self.homeurl)
         self.write(''.join(ads))
         self.commit_and_close(session)
 

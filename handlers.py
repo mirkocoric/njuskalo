@@ -15,6 +15,7 @@ class AdsHandler(tornado.web.RequestHandler):
         self.session_registry = session_registry
 
     @staticmethod
+    """Commits and closes the session"""
     def commit_and_close(session):
         try:
             session.commit()

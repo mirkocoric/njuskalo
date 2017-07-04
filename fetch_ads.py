@@ -9,7 +9,7 @@ import database
 
 
 class Ad(namedtuple('ad', 'naslov cijena')):
-    '''Stores naslov and cijena for each ad in a single element'''
+    """Stores naslov and cijena for each ad in a single element"""
     def __str__(self):
         return ('Naslov: %s Cijena: %s \n' %
                 (self.naslov, ' '.join(self.cijena))).encode('utf-8')
@@ -26,7 +26,7 @@ def is_int(name):
 
 def make_price(pricetag_list):
     """Returns list of prices"""
-    return [pricetag.text.replace(r'~', '')
+    return [pricetag.text.replace('~', '')
             for pricetag in pricetag_list]
 
 
@@ -66,15 +66,16 @@ def ads_to_string(ads):
 
 
 def create_url(url, number):
-    '''Returns page url for given url and page number'''
+    """Returns page url for given url and page number"""
     string = "%s?page=%d" % (url, number + 1)
     return string
 
 
 @gen.coroutine
 def fetch_from_url_and_store(session, url):
-    '''Fetches url from url and stores data into database
-    Returns data'''
+    """Fetches url from url and stores data into database
+    Returns data
+    """
     soup = yield soup_from_url(url)
     ads = find_all_ads(soup)
     data = ads_to_string(ads)
@@ -84,9 +85,10 @@ def fetch_from_url_and_store(session, url):
 
 @gen.coroutine
 def find_ads(session, page_num, homeurl):
-    '''Find ads from page_num pages from given url
+    """Find ads from page_num pages from given url
     First checks if url exists in database ads
-    Returns a list of pages where each page is a list of AdTuple objects'''
+    Returns a list of pages where each page is a list of AdTuple objects
+    """
     links_articles = []
     for number in xrange(page_num):
         url = create_url(homeurl, number)

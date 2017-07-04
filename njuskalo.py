@@ -24,7 +24,8 @@ class Ads(Base):
 
 def parse_args():
     """Parses program arguments
-    Returns home url and port"""
+    Returns home url and port
+    """
     description_string = 'Finding ads and prints title and price'
     parser = argparse.ArgumentParser(description=description_string)
     parser.add_argument('home',
@@ -36,6 +37,7 @@ def parse_args():
 
 
 def create_session_registry(delete_table):
+    """Creates session registry"""
     engine = create_engine("mysql://njuskalo:cola@localhost/njuskalo",
                            echo=True)
     if delete_table:

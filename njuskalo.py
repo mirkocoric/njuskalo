@@ -1,25 +1,13 @@
 """blabla"""
 from __future__ import print_function
 import argparse
-import logging
-import handlers
 import tornado.ioloop
 import tornado.web
-from sqlalchemy.ext.declarative import declarative_base
+import handlers
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.dialects.mysql.base import LONGTEXT
-
-Base = declarative_base()
-
-
-class Ads(Base):
-    __tablename__ = 'ads'
-    url = Column(String(100), index=True)
-    data = Column(LONGTEXT)
-    id = Column(Integer, primary_key=True)
+from models import Base
 
 
 def parse_args():
@@ -36,15 +24,14 @@ def parse_args():
     return parser.parse_args()
 
 
-def create_session_registry(delete_table):
-    """Creates session registry"""
+def create_session_factory(delete_table):
+    """Creates session factory"""
     engine = create_engine("mysql://njuskalo:cola@localhost/njuskalo",
                            echo=True)
     if delete_table:
         Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
-    session_factory = sessionmaker(bind=engine)
-    return scoped_session(session_factory)
+    return sessionmaker(bind=engine)
 
 
 def start_ad_service(homeurl=None, port=None, delete_table=True):
@@ -53,17 +40,17 @@ def start_ad_service(homeurl=None, port=None, delete_table=True):
         args = parse_args()
     homeurl = homeurl or args.home
     port = port or args.port
-    session_registry = create_session_registry(delete_table)
-    app = make_app(homeurl, session_registry)
+    session_factory = create_session_factory(delete_table)
+    app = make_app(homeurl, session_factory)
     app.listen(port)
     tornado.ioloop.IOLoop.current().start()
 
 
-def make_app(homeurl, session_registry):
+def make_app(homeurl, session_factory):
     """Creates web application"""
     return tornado.web.Application([
         (r"/", handlers.AdsHandler, dict(homeurl=homeurl,
-         session_registry=session_registry))])
+                                         session_factory=session_factory))])
 
 if __name__ == "__main__":
     start_ad_service()

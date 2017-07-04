@@ -1,14 +1,13 @@
 """blabla"""
 from __future__ import print_function
 from collections import namedtuple
-import re
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
 from bs4 import BeautifulSoup
 import database
 
 
-class Ad(namedtuple('ad', 'naslov cijena')):
+class Ad(namedtuple('Ad', 'naslov cijena')):
     """Stores naslov and cijena for each ad in a single element"""
     def __str__(self):
         return ('Naslov: %s Cijena: %s \n' %

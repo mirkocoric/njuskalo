@@ -1,7 +1,7 @@
-beautifulsoup4
-requests
 bs4
 lxml
 pylint
 pep8
 tornado
+sqlalchemy
+mysql-python

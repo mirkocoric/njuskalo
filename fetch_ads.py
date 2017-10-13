@@ -1,18 +1,17 @@
-"""blabla"""
+
 from __future__ import print_function
 from collections import namedtuple
-import re
 from tornado import gen
 from tornado.httpclient import AsyncHTTPClient
 from bs4 import BeautifulSoup
+import database
 
 
-class AdTuple(namedtuple('adtuple', 'naslov cijena')):
-    '''Stores naslov and cijena for each ad in a single element'''
+class Ad(namedtuple('Ad', 'naslov cijena')):
+    """Stores naslov and cijena for each ad in a single element"""
     def __str__(self):
-        return ''.join(['Naslov: ', self.naslov, ' ',
-                        'Cijena: ', ' '.join(self.cijena),
-                        '\r\n']).encode('utf-8', errors='ignore')
+        return ('Naslov: %s Cijena: %s \n' %
+                (self.naslov, ' '.join(self.cijena))).encode('utf-8')
 
 
 def is_int(name):
@@ -26,7 +25,7 @@ def is_int(name):
 
 def make_price(pricetag_list):
     """Returns list of prices"""
-    return [re.sub(r'~', '', pricetag.text)
+    return [pricetag.text.replace('~', '')
             for pricetag in pricetag_list]
 
 
@@ -40,8 +39,8 @@ def find_atags(soup):
 def find_all_ads(soup):
     """Finds all articles and returns sequence of AdTuples"""
     atags = find_atags(soup)
-    return (AdTuple(atag.text, make_price(atag.parent.parent.find_all
-                                          (class_='price')))
+    return (Ad(atag.text, make_price
+            (atag.parent.parent.find_all(class_='price')))
             for atag in atags)
 
 
@@ -59,34 +58,54 @@ def find_last_page_number(soup):
     return max(numbers)
 
 
-def ads_to_strings(ads):
-    """Returns all ads as a list of strings"""
-    return map(str, ads)
+def ads_to_string(ads):
+    """Returns all ads as a string"""
+    strings = map(str, ads)
+    return ''.join(strings)
 
 
 def create_url(url, number):
-    '''Returns page url for given url and page number'''
+    """Returns page url for given url and page number"""
     string = "%s?page=%d" % (url, number + 1)
     return string
 
 
 @gen.coroutine
-def find_ads(page_num, url):
-    '''Find ads from page_num pages from given url
-    Returns a list of pages where each page is a list of AdTuple objects'''
+def fetch_from_url_and_store(session, url):
+    """Fetches url from url and stores data into database
+    Returns data
+    """
+    soup = yield soup_from_url(url)
+    ads = find_all_ads(soup)
+    data = ads_to_string(ads)
+    database.update(session, url, data)
+    raise gen.Return(data)
+
+
+@gen.coroutine
+def find_ads(session, page_num, homeurl):
+    """Find ads from page_num pages from given url
+    First checks if url exists in database ads
+    Returns a list of pages where each page is a list of AdTuple objects
+    """
     links_articles = []
     for number in xrange(page_num):
-        soup = yield soup_from_url(create_url(url, number))
-        links_articles += find_all_ads(soup)
+        url = create_url(homeurl, number)
+        ads = database.search(session, url)
+        if ads:
+            links_articles += ads.data
+        else:
+            links_articles += yield fetch_from_url_and_store(session, url)
     raise gen.Return(links_articles)
 
 
 @gen.coroutine
-def ads_from_url(homeurl):
+def ads_from_url(session, homeurl):
     """Returns ads from homeurl"""
     soup = yield soup_from_url(homeurl)
-    links_articles = yield find_ads(find_last_page_number(soup), homeurl)
-    raise gen.Return(ads_to_strings(links_articles))
+    ads = yield find_ads(session, find_last_page_number(soup),
+                         homeurl)
+    raise gen.Return(ads)
 
 
 @gen.coroutine
